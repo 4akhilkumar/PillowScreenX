@@ -6,14 +6,15 @@ of your screen with ease. The module also provides options to store your screens
 in a zip file or in a separate folder. Whether you need to capture screenshots for documentation,
 debugging, or any other purpose, PillowScreenX is the ideal solution.
 
-WARNING:
-    PillowScreenX is under development and is not yet ready for production use.
+INFO:
+    PillowScreenX is under development and it can only be generate path
+    where the screenshot can be saved.
 """
 import inspect
 import os
 import re
 import time
-from PIL import ImageGrab
+# from PIL import ImageGrab
 
 class PillowScreenX:
     """
@@ -29,12 +30,12 @@ class PillowScreenX:
         So, you can set the output folder name by setting the environment variable OUTPUT_FOLDER_NAME.
 
     Attributes:
-        DEFAULT_OUTPUT_DIRECTORY = None
-        CAPTURE_SCREENSHOT = False
-        SCREENSHOT_NAME_REQUIRED = True
-        DEFAULT_SCREENSHOT_NAME = None
-        DEFAULT_SCREENSHOT_QUALITY = 100
-        FETCH_SCREENSHOT_PATH = True
+        # DEFAULT_OUTPUT_DIRECTORY = None
+        # CAPTURE_SCREENSHOT = False
+        # SCREENSHOT_NAME_REQUIRED = True
+        # DEFAULT_SCREENSHOT_NAME = None
+        # DEFAULT_SCREENSHOT_QUALITY = 100
+        # FETCH_SCREENSHOT_PATH = True
         OUTPUT_FOLDER_NAME is OS environment variable OUTPUT_FOLDER_NAME or
                 current date and time in the format YYYYMMDD_HHMMSS
     """
@@ -42,12 +43,12 @@ class PillowScreenX:
         OUTPUT_FOLDER_NAME = os.environ.get('OUTPUT_FOLDER_NAME')
     else:
         OUTPUT_FOLDER_NAME = time.strftime("%Y%m%d_%H%M%S")
-    DEFAULT_OUTPUT_DIRECTORY = None
-    CAPTURE_SCREENSHOT = False
-    SCREENSHOT_NAME_REQUIRED = True
-    DEFAULT_SCREENSHOT_NAME = None
-    DEFAULT_SCREENSHOT_QUALITY = 100
-    FETCH_SCREENSHOT_PATH = True
+    # DEFAULT_OUTPUT_DIRECTORY = None
+    # CAPTURE_SCREENSHOT = False
+    # SCREENSHOT_NAME_REQUIRED = True
+    # DEFAULT_SCREENSHOT_NAME = None
+    # DEFAULT_SCREENSHOT_QUALITY = 100
+    # FETCH_SCREENSHOT_PATH = True
 
     @classmethod
     def screenshot(cls, name: str = None, wait_time: float = 0.0) -> str:
@@ -63,7 +64,7 @@ class PillowScreenX:
         time.sleep(wait_time)
 
         # Take ScreenShot and store it in bytes format
-        screenshot = ImageGrab.grab()
+        # screenshot = ImageGrab.grab()
 
         calling_frame = inspect.stack()[1]
         current_file = calling_frame.filename
@@ -78,11 +79,11 @@ class PillowScreenX:
         # File directory
         file_location = os.path.dirname(os.path.abspath(current_file))
 
-        # Parent directory of the file
-        file_parent_dir = os.path.basename(file_location)
+        # # Parent directory of the file
+        # file_parent_dir = os.path.basename(file_location)
 
-        # Grandparent directory of the file
-        file_grandpar_dir = os.path.basename(os.path.dirname(file_location))
+        # # Grandparent directory of the file
+        # file_grandpar_dir = os.path.basename(os.path.dirname(file_location))
 
         # Get only folders in {file_location} directory
         old_folders_in_file_dir = [f for f in os.listdir(file_location) \
@@ -121,7 +122,7 @@ class PillowScreenX:
 
         print(f'\nScreenshot is saved at: {output_path}\n')
 
-        if cls.CAPTURE_SCREENSHOT is True:
-            screenshot.save(output_path, quality=cls.DEFAULT_SCREENSHOT_QUALITY)
+        # if cls.CAPTURE_SCREENSHOT is True:
+        #     screenshot.save(output_path, quality=cls.DEFAULT_SCREENSHOT_QUALITY)
 
         return output_path
