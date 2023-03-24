@@ -5,16 +5,20 @@ With PillowScreenX, you can take full screenshots or capture specific regions
 of your screen with ease. The module also provides options to store your screenshots
 in a zip file or in a separate folder. Whether you need to capture screenshots for documentation,
 debugging, or any other purpose, PillowScreenX is the ideal solution.
-
-INFO:
-    PillowScreenX is under development and it can only be generate path
-    where the screenshot can be saved.
 """
 import inspect
 import os
 import re
 import time
-# from PIL import ImageGrab
+try:
+    import docx
+except ImportError:
+    print("docx is not installed. Please install it by running the command: pip install python-docx")
+try:
+    from PIL import ImageGrab
+except ImportError:
+    print("Pillow is not installed. Please install it by running the command: pip install Pillow")
+
 
 class PillowScreenX:
     """
@@ -23,19 +27,13 @@ class PillowScreenX:
 
     The default output folder name is the current date and time in the format YYYYMMDD_HHMMSS.
     The default screenshot name is the name of the python file in which this module is called.
-    The default screenshot quality is 100.
+    The default screenshot quality is 95.
 
     Note:
         The output folder name will be read from the environment variable OUTPUT_FOLDER_NAME.
         So, you can set the output folder name by setting the environment variable OUTPUT_FOLDER_NAME.
 
     Attributes:
-        # DEFAULT_OUTPUT_DIRECTORY = None
-        # CAPTURE_SCREENSHOT = False
-        # SCREENSHOT_NAME_REQUIRED = True
-        # DEFAULT_SCREENSHOT_NAME = None
-        # DEFAULT_SCREENSHOT_QUALITY = 100
-        # FETCH_SCREENSHOT_PATH = True
         OUTPUT_FOLDER_NAME is OS environment variable OUTPUT_FOLDER_NAME or
                 current date and time in the format YYYYMMDD_HHMMSS
     """
@@ -43,15 +41,53 @@ class PillowScreenX:
         OUTPUT_FOLDER_NAME = os.environ.get('OUTPUT_FOLDER_NAME')
     else:
         OUTPUT_FOLDER_NAME = time.strftime("%Y%m%d_%H%M%S")
-    # DEFAULT_OUTPUT_DIRECTORY = None
-    # CAPTURE_SCREENSHOT = False
-    # SCREENSHOT_NAME_REQUIRED = True
-    # DEFAULT_SCREENSHOT_NAME = None
-    # DEFAULT_SCREENSHOT_QUALITY = 100
-    # FETCH_SCREENSHOT_PATH = True
 
     @classmethod
-    def screenshot(cls, name: str = None, wait_time: float = 0.0) -> str:
+    def __generate_word_docx(cls, **kwargs) -> None:
+        """
+        Generate a word document with the screenshots
+        """
+        WORD_DOCX_NAME = os.environ.get('WORD_DOCX_NAME')
+        WORD_DOCX_PATH = os.environ.get('WORD_DOCX_PATH')
+
+        HEADING = kwargs.get('HEADING')
+        SUBHEADING = kwargs.get('SUBHEADING')
+        SUBHEADING_2 = kwargs.get('SUBHEADING_2')
+        IMAGE = kwargs.get('IMAGE')
+
+        # Check if the Word document already exists in the given path
+        if os.path.exists(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME)):
+            # If the document already exists, open it and add the data
+            doc = docx.Document(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME))
+            SUBHEADING_ = SUBHEADING + " | " + SUBHEADING_2
+            doc.add_heading(SUBHEADING_, level=2)
+            doc.add_picture(IMAGE, width=docx.shared.Inches(6.5))
+        else:
+            # If the document does not exist, create a new one and add the data
+            doc = docx.Document()
+            SUBHEADING_ = SUBHEADING + " | " + SUBHEADING_2
+            doc.add_heading(SUBHEADING_, level=2)
+            doc.add_picture(IMAGE, width=docx.shared.Inches(6.5))
+
+        # Save the document to the given path
+        doc.save(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME))
+
+    @classmethod
+    def __remove_special_chars(cls, string: str) -> str:
+        """
+        Remove special characters from the given string
+
+        Args:
+            string (str): The string to remove special characters
+
+        Returns:
+            str: The string without special characters
+        """
+        clean_string = re.sub(r'\W+', ' ', re.sub(r'_', ' ', string))
+        return clean_string
+
+    @classmethod
+    def screenshot(cls, name: str = None, wait_time: float = 0.0, **kwargs) -> str:
         """
         Take the screenshot of the screen.
 
@@ -59,12 +95,29 @@ class PillowScreenX:
             name (str, optional): The name of the screenshot. Defaults to None.
             wait_time (float, optional): The time to wait before taking the screenshot.
                 Defaults to 0.0.
+            **kwargs: The keyword arguments.
+
+        Keyword Args:
+            CAPTURE_SCREENSHOT = False
+            FETCH_SCREENSHOT_PATH = True
         """
+        SCREENSHOT_QUALITY = 95
+
+        if kwargs.get('CAPTURE_SCREENSHOT') is False:
+            CAPTURE_SCREENSHOT = False
+        else:
+            CAPTURE_SCREENSHOT = True
+
+        if kwargs.get('FETCH_SCREENSHOT_PATH') is False:
+            FETCH_SCREENSHOT_PATH = False
+        else:
+            FETCH_SCREENSHOT_PATH = True
+
         # Wait time before taking screenshot
         time.sleep(wait_time)
 
         # Take ScreenShot and store it in bytes format
-        # screenshot = ImageGrab.grab()
+        screenshot = ImageGrab.grab()
 
         calling_frame = inspect.stack()[1]
         current_file = calling_frame.filename
@@ -79,11 +132,11 @@ class PillowScreenX:
         # File directory
         file_location = os.path.dirname(os.path.abspath(current_file))
 
-        # # Parent directory of the file
-        # file_parent_dir = os.path.basename(file_location)
+        # Parent directory of the file
+        file_parent_dir = os.path.basename(file_location)
 
-        # # Grandparent directory of the file
-        # file_grandpar_dir = os.path.basename(os.path.dirname(file_location))
+        # Grandparent directory of the file
+        file_grandpar_dir = os.path.basename(os.path.dirname(file_location))
 
         # Get only folders in {file_location} directory
         old_folders_in_file_dir = [f for f in os.listdir(file_location) \
@@ -120,9 +173,17 @@ class PillowScreenX:
 
             output_path = f'{output_directory}\{test_case_name}_({file_count}).png'
 
-        print(f'\nScreenshot is saved at: {output_path}\n')
+        if CAPTURE_SCREENSHOT:
+            screenshot.save(output_path, quality=SCREENSHOT_QUALITY)
+            print(f'\nScreenshot is saved at: {output_path}\n')
 
-        # if cls.CAPTURE_SCREENSHOT is True:
-        #     screenshot.save(output_path, quality=cls.DEFAULT_SCREENSHOT_QUALITY)
+            word_meta_data = {
+                "HEADING": cls.__remove_special_chars(file_grandpar_dir),
+                "SUBHEADING": cls.__remove_special_chars(file_parent_dir),
+                "SUBHEADING_2": cls.__remove_special_chars(test_case_name),
+                "IMAGE": output_path
+            }
+            cls.__generate_word_docx(**word_meta_data)
 
-        return output_path
+        if FETCH_SCREENSHOT_PATH:
+            return output_path
