@@ -7,6 +7,7 @@ in a zip file or in a separate folder. Whether you need to capture screenshots f
 debugging, or any other purpose, PillowScreenX is the ideal solution.
 """
 import inspect
+import json
 import os
 import re
 import time
@@ -43,31 +44,98 @@ class PillowScreenX:
         OUTPUT_FOLDER_NAME = time.strftime("%Y%m%d_%H%M%S")
 
     @classmethod
-    def __generate_word_docx(cls, **kwargs) -> None:
+    def store_dict(cls, my_dict):
+        """
+        Store the dictionary in a cache file using json.
+        """
+        cache_dir = os.path.expanduser("~/.pillowscreenxcache")
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+
+        cache_file = os.path.join(cache_dir, "pillowscreenxdata.cache")
+        with open(cache_file, "w", encoding='utf-8') as file:
+            json.dump(my_dict, file)
+
+    @classmethod
+    def load_dict(cls):
+        """
+        Load the dictionary from the cache file using json.
+        """
+        cache_dir = os.path.expanduser("~/.pillowscreenxcache")
+        cache_file = os.path.join(cache_dir, "pillowscreenxdata.cache")
+        if not os.path.exists(cache_file):
+            return {}  # Return an empty dictionary if the cache file doesn't exist.
+
+        with open(cache_file, "r", encoding='utf-8') as file:
+            my_dict = json.load(file)
+        return my_dict
+
+    @classmethod
+    def __generate_word_docx(cls, file_path: str, image_path: str) -> None:
         """
         Generate a word document with the screenshots
         """
         WORD_DOCX_NAME = os.environ.get('WORD_DOCX_NAME')
         WORD_DOCX_PATH = os.environ.get('WORD_DOCX_PATH')
 
-        HEADING = kwargs.get('HEADING')
-        SUBHEADING = kwargs.get('SUBHEADING')
-        SUBHEADING_2 = kwargs.get('SUBHEADING_2')
-        IMAGE = kwargs.get('IMAGE')
+        is_heading_1 = True
+        is_heading_2 = True
+        is_heading_3 = True
+        split_file_path = file_path.split(os.sep)
+        heading_1 = cls.__remove_special_chars(split_file_path[1])
+        heading_3 = cls.__remove_special_chars(split_file_path[-1])
+        heading_2 = "None"
+        if split_file_path[-2] != split_file_path[1]:
+            heading_2 = cls.__remove_special_chars(split_file_path[-2])
+
+        load_cache_data = cls.load_dict()
+
+        if load_cache_data.get("CURRENT_FILE_NAME") == heading_3:
+            # No need of heading for the second time
+            is_heading_3 = False
+        if load_cache_data.get("CURRENT_DIR") == heading_1:
+            # No need of heading for the second time
+            is_heading_1 = False
+        if load_cache_data.get("CURRENT_SUBDIR") == heading_2:
+            # No need of heading for the second time
+            is_heading_2 = False
 
         # Check if the Word document already exists in the given path
         if os.path.exists(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME)):
             # If the document already exists, open it and add the data
             doc = docx.Document(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME))
-            SUBHEADING_ = SUBHEADING + " | " + SUBHEADING_2
-            doc.add_heading(SUBHEADING_, level=2)
-            doc.add_picture(IMAGE, width=docx.shared.Inches(6.5))
+            if is_heading_1 and is_heading_3:
+                doc.add_heading(heading_1, level=2)
+                doc.add_heading(heading_3, level=3)
+            if is_heading_1 is False and is_heading_3:
+                doc.add_heading(heading_3, level=3)
+            doc.add_picture(image_path, width=docx.shared.Inches(6.5))
+
+            cls.store_dict(
+                {
+                    "CURRENT_DIR": heading_1,
+                    "CURRENT_FILE_NAME": heading_3,
+                    "CURRENT_SUBDIR": heading_2
+                }
+            )
+
         else:
             # If the document does not exist, create a new one and add the data
             doc = docx.Document()
-            SUBHEADING_ = SUBHEADING + " | " + SUBHEADING_2
-            doc.add_heading(SUBHEADING_, level=2)
-            doc.add_picture(IMAGE, width=docx.shared.Inches(6.5))
+            if is_heading_1 and is_heading_3:
+                doc.add_heading(heading_1, level=2)
+                doc.add_heading(heading_3, level=3)
+            if is_heading_1 is False and is_heading_3:
+                doc.add_heading(heading_3, level=3)
+            doc.add_picture(image_path, width=docx.shared.Inches(6.5))
+
+            cls.store_dict(
+                {
+                    "CURRENT_DIR": heading_1,
+                    "CURRENT_FILE_NAME": heading_3,
+                    "CURRENT_SUBDIR": heading_2
+                }
+            )
 
         # Save the document to the given path
         doc.save(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME))
@@ -83,7 +151,8 @@ class PillowScreenX:
         Returns:
             str: The string without special characters
         """
-        clean_string = re.sub(r'\W+', ' ', re.sub(r'_', ' ', string))
+        filename_wo_ext = re.sub(r'\.\w+$', '', string)
+        clean_string = re.sub(r'\W+', ' ', re.sub(r'_', ' ', filename_wo_ext)).capitalize()
         return clean_string
 
     @classmethod
@@ -132,12 +201,6 @@ class PillowScreenX:
         # File directory
         file_location = os.path.dirname(os.path.abspath(current_file))
 
-        # Parent directory of the file
-        file_parent_dir = os.path.basename(file_location)
-
-        # Grandparent directory of the file
-        file_grandpar_dir = os.path.basename(os.path.dirname(file_location))
-
         # Get only folders in {file_location} directory
         old_folders_in_file_dir = [f for f in os.listdir(file_location) \
                                         if os.path.isdir(os.path.join(file_location, f))]
@@ -177,13 +240,7 @@ class PillowScreenX:
             screenshot.save(output_path, quality=SCREENSHOT_QUALITY)
             print(f'\nScreenshot is saved at: {output_path}\n')
 
-            word_meta_data = {
-                "HEADING": cls.__remove_special_chars(file_grandpar_dir),
-                "SUBHEADING": cls.__remove_special_chars(file_parent_dir),
-                "SUBHEADING_2": cls.__remove_special_chars(test_case_name),
-                "IMAGE": output_path
-            }
-            cls.__generate_word_docx(**word_meta_data)
+            cls.__generate_word_docx(file_path = current_file, image_path = output_path)
 
         if FETCH_SCREENSHOT_PATH:
             return output_path

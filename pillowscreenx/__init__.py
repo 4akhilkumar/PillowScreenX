@@ -13,4 +13,4 @@ For feedback, bug reports, or feature requests, please visit the PillowScreenX G
 """
 from .pillowscreenx import PillowScreenX
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
