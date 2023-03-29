@@ -12,6 +12,10 @@ import os
 import re
 import time
 try:
+    import win32gui
+except ImportError:
+    print("pywin32 is not installed. Please install it by running the command: pip install pywin32")
+try:
     import docx
 except ImportError:
     print("docx is not installed. Please install it by running the command: pip install python-docx")
@@ -90,50 +94,72 @@ class PillowScreenX:
 
         load_cache_data = cls.load_dict()
 
-        if load_cache_data.get("CURRENT_FILE_NAME") == heading_3:
-            # No need of heading for the second time
-            is_heading_3 = False
         if load_cache_data.get("CURRENT_DIR") == heading_1:
             # No need of heading for the second time
             is_heading_1 = False
         if load_cache_data.get("CURRENT_SUBDIR") == heading_2:
             # No need of heading for the second time
             is_heading_2 = False
+        if load_cache_data.get("CURRENT_FILE_NAME") == heading_3:
+            # No need of heading for the second time
+            is_heading_3 = False
 
         # Check if the Word document already exists in the given path
         if os.path.exists(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME)):
             # If the document already exists, open it and add the data
             doc = docx.Document(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME))
-            if is_heading_1 and is_heading_3:
+
+            if is_heading_1 and is_heading_2 and is_heading_3:
+                content = heading_1 + " - " + heading_2
+                doc.add_heading(content, level=2)
+                doc.add_heading(heading_3, level=3)
+            elif is_heading_1 and is_heading_3:
                 doc.add_heading(heading_1, level=2)
                 doc.add_heading(heading_3, level=3)
-            if is_heading_1 is False and is_heading_3:
+            elif is_heading_1 is False and is_heading_3:
                 doc.add_heading(heading_3, level=3)
+            elif is_heading_2 and is_heading_3:
+                doc.add_heading(heading_2, level=2)
+                doc.add_heading(heading_3, level=3)
+            elif is_heading_2 is False and is_heading_3:
+                doc.add_heading(heading_3, level=3)
+
             doc.add_picture(image_path, width=docx.shared.Inches(6.5))
 
             cls.store_dict(
                 {
                     "CURRENT_DIR": heading_1,
-                    "CURRENT_FILE_NAME": heading_3,
-                    "CURRENT_SUBDIR": heading_2
+                    "CURRENT_SUBDIR": heading_2,
+                    "CURRENT_FILE_NAME": heading_3
                 }
             )
 
         else:
             # If the document does not exist, create a new one and add the data
             doc = docx.Document()
-            if is_heading_1 and is_heading_3:
+
+            if is_heading_1 and is_heading_2 and is_heading_3:
+                content = heading_1 + " - " + heading_2
+                doc.add_heading(content, level=2)
+                doc.add_heading(heading_3, level=3)
+            elif is_heading_1 and is_heading_3:
                 doc.add_heading(heading_1, level=2)
                 doc.add_heading(heading_3, level=3)
-            if is_heading_1 is False and is_heading_3:
+            elif is_heading_1 is False and is_heading_3:
                 doc.add_heading(heading_3, level=3)
+            elif is_heading_2 and is_heading_3:
+                doc.add_heading(heading_2, level=2)
+                doc.add_heading(heading_3, level=3)
+            elif is_heading_2 is False and is_heading_3:
+                doc.add_heading(heading_3, level=3)
+
             doc.add_picture(image_path, width=docx.shared.Inches(6.5))
 
             cls.store_dict(
                 {
                     "CURRENT_DIR": heading_1,
-                    "CURRENT_FILE_NAME": heading_3,
-                    "CURRENT_SUBDIR": heading_2
+                    "CURRENT_SUBDIR": heading_2,
+                    "CURRENT_FILE_NAME": heading_3
                 }
             )
 
@@ -154,6 +180,19 @@ class PillowScreenX:
         filename_wo_ext = re.sub(r'\.\w+$', '', string)
         clean_string = re.sub(r'\W+', ' ', re.sub(r'_', ' ', filename_wo_ext)).capitalize()
         return clean_string
+
+    @classmethod
+    def __get_window_coordinates(cls, window_title: str) -> tuple:
+        """
+        Get the window coordinates
+
+        Returns:
+            tuple: The window coordinates
+        """
+        hwnd = win32gui.FindWindow(None, window_title)
+        # Get the coordinates of the window
+        left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+        return (left, top, right, bottom)
 
     @classmethod
     def screenshot(cls, name: str = None, wait_time: float = 0.0, **kwargs) -> str:
@@ -187,6 +226,16 @@ class PillowScreenX:
 
         # Take ScreenShot and store it in bytes format
         screenshot = ImageGrab.grab()
+
+        # If only window screenshot is required
+        if kwargs.get('WINDOW_TITLE'):
+            # Get the window coordinates
+            try:
+                window_coordinates = cls.__get_window_coordinates(kwargs.get('WINDOW_TITLE'))
+                # Crop the screenshot using the window coordinates
+                screenshot = screenshot.crop(window_coordinates)
+            except Exception as err_msg:
+                raise Exception(f"Error: {err_msg}")
 
         calling_frame = inspect.stack()[1]
         current_file = calling_frame.filename
