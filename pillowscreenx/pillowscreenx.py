@@ -109,7 +109,7 @@ class PillowScreenX:
             # If the document already exists, open it and add the data
             doc = docx.Document(os.path.join(WORD_DOCX_PATH, WORD_DOCX_NAME))
 
-            if is_heading_1 and is_heading_2 and is_heading_3:
+            if is_heading_1 and is_heading_2 and is_heading_3 and heading_2 != "None":
                 content = heading_1 + " - " + heading_2
                 doc.add_heading(content, level=2)
                 doc.add_heading(heading_3, level=3)
@@ -138,7 +138,7 @@ class PillowScreenX:
             # If the document does not exist, create a new one and add the data
             doc = docx.Document()
 
-            if is_heading_1 and is_heading_2 and is_heading_3:
+            if is_heading_1 and is_heading_2 and is_heading_3 and heading_2 != "None":
                 content = heading_1 + " - " + heading_2
                 doc.add_heading(content, level=2)
                 doc.add_heading(heading_3, level=3)
