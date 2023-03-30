@@ -130,6 +130,9 @@ class PillowScreenX:
                 content = heading_1 + " - " + heading_2
                 doc.add_heading(content, level=2)
                 doc.add_heading(heading_3, level=3)
+            elif is_heading_1 is False and is_heading_2 and heading_2 != "None" and is_heading_3:
+                doc.add_heading(heading_2, level=2)
+                doc.add_heading(heading_3, level=3)
             elif is_heading_1 and is_heading_3:
                 doc.add_heading(heading_1, level=2)
                 doc.add_heading(heading_3, level=3)
@@ -158,6 +161,9 @@ class PillowScreenX:
             if is_heading_1 and is_heading_2 and is_heading_3 and heading_2 != "None":
                 content = heading_1 + " - " + heading_2
                 doc.add_heading(content, level=2)
+                doc.add_heading(heading_3, level=3)
+            elif is_heading_1 is False and is_heading_2 and heading_2 != "None" and is_heading_3:
+                doc.add_heading(heading_2, level=2)
                 doc.add_heading(heading_3, level=3)
             elif is_heading_1 and is_heading_3:
                 doc.add_heading(heading_1, level=2)
