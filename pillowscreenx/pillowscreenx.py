@@ -75,12 +75,29 @@ class PillowScreenX:
         return my_dict
 
     @classmethod
-    def __generate_word_docx(cls, file_path: str, image_path: str) -> None:
+    def generate_word_docx(cls, file_path: str, image_path: str) -> None:
         """
         Generate a word document with the screenshots
         """
         WORD_DOCX_NAME = os.environ.get('WORD_DOCX_NAME')
         WORD_DOCX_PATH = os.environ.get('WORD_DOCX_PATH')
+
+        # From BISP_20230329_172946.docx extract the text before the date and time using regex
+        file_prefix = re.search(r"(.+?)_\d{8}_\d{6}", WORD_DOCX_NAME).group(1)
+
+        # if a different word docx is existing in the given path, delete it
+        if os.path.exists(WORD_DOCX_PATH):
+            # Get the list of word docx files in the given path
+            word_docx_files = [f for f in os.listdir(WORD_DOCX_PATH) if f.endswith(".docx")]
+            if len(word_docx_files) > 0:
+                for each_file in word_docx_files:
+                    # Check the file name matching this pattern using regex {file_prefix}_20230329_172946.docx
+                    if re.search(r"^" + file_prefix + r"_\d{8}_\d{6}.docx$", each_file):
+                        # Check the each_file name is not equal to the current word docx name
+                        if each_file != WORD_DOCX_NAME:
+                            # Delete the file and print the log
+                            os.remove(os.path.join(WORD_DOCX_PATH, each_file))
+                            print(f"Deleted the existing word docx file: {each_file}")
 
         is_heading_1 = True
         is_heading_2 = True
@@ -289,7 +306,7 @@ class PillowScreenX:
             screenshot.save(output_path, quality=SCREENSHOT_QUALITY)
             print(f'\nScreenshot is saved at: {output_path}\n')
 
-            cls.__generate_word_docx(file_path = current_file, image_path = output_path)
+            cls.generate_word_docx(file_path = current_file, image_path = output_path)
 
         if FETCH_SCREENSHOT_PATH:
             return output_path
